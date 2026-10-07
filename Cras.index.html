@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CTLRS – Union des Comores | Transport & Sécurité Routière</title>
+    
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --primary: #0d3b66;
+            --primary-light: #1f568d;
+            --secondary: #0c7a85;
+            --accent: #1f9d55;
+            --warning: #f28c28;
+            --danger: #e5484d;
+            --gold: #c99a2e;
+            --bg-body: #f4f7fa;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --sidebar-width: 260px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --shadow-sm: 0 2px 8px rgba(13, 59, 102, 0.05);
+            --shadow-md: 0 6px 20px rgba(13, 59, 102, 0.08);
+            --shadow-lg: 0 12px 32px rgba(13, 59, 102, 0.12);
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #0b1320;
+            --bg-card: #132237;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #1e324d;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            transition: background 0.3s, color 0.3s;
+            line-height: 1.5;
+        }
+
+        /* Layout Structure */
+        .app-shell {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background: linear-gradient(180deg, #092846 0%, #06192d 100%);
+            color: #e2e8f0;
+            padding: 20px 16px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            margin-bottom: 24px;
+        }
+
+        .brand-logo svg { height: 38px; }
+        .brand-logo h2 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-grow: 1;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item a:hover, .nav-item a.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .nav-item a.active {
+            background: var(--secondary);
+            font-weight: 600;
+        }
+
+        /* Main Content Wrapper */
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Top Bar */
+        .topbar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            backdrop-filter: blur(8px);
+        }
+
+        .topbar-left h1 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .theme-toggle, .mobile-toggle {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover { background: var(--border); }
+        .mobile-toggle { display: none; }
+
+        /* Banner Hero */
+        .hero-banner {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 32px 28px;
+            margin: 24px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-banner::after {
+            content: '';
+            position: absolute;
+            right: -50px;
+            bottom: -50px;
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 50%;
+        }
+
+        .hero-content h2 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        /* Dashboard View Grid */
+        .content-container {
+            padding: 0 24px 32px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-sm);
+            background: rgba(12, 122, 133, 0.1);
+            color: var(--secondary);
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+        }
+
+        .stat-info h4 {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-info .value {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin-top: 4px;
+        }
+
+        /* Data Tables */
+        .data-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: var(--bg-body);
+            color: var(--text-muted);
+            padding: 12px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Badges & Buttons */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-success { background: rgba(31, 157, 85, 0.12); color: var(--accent); }
+        .badge-warning { background: rgba(242, 140, 40, 0.12); color: var(--warning); }
+        .badge-danger { background: rgba(229, 72, 77, 0.12); color: var(--danger); }
+
+        .btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s, transform 0.1s;
+            text-decoration: none;
+        }
+        .btn:hover { background: var(--primary-light); transform: translateY(-1px); }
+        .btn-accent { background: var(--accent); }
+        .btn-accent:hover { background: #188044; }
+
+        /* Forms */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .form-control {
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(12, 122, 133, 0.15);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 900px) {
+            .app-shell { grid-template-columns: 1fr; }
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                transition: left 0.3s ease;
+            }
+            .sidebar.active { left: 0; }
+            .mobile-toggle { display: grid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="brand-logo">
+            <svg viewBox="0 0 100 100" fill="none">
+                <circle cx="50" cy="50" r="45" fill="#0C7A85"/>
+                <path d="M30 65 L50 25 L70 65 Z" fill="#1F9D55"/>
+                <circle cx="50" cy="48" r="8" fill="#C99A2E"/>
+            </svg>
+            <h2>CTLRS Comores</h2>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="#" class="active" onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-line"></i> Tableau de bord</a></li>
+            <li class="nav-item"><a href="#" onclick="switchTab('vehicles')"><i class="fa-solid fa-car"></i> Véhicules Immatriculés</a></li>
+            <li class="nav-item"><a href="#" onclick="switchTab('permits')"><i class="fa-solid fa-id-card"></i> Permis de Conduire</a></li>
+            <li class="nav-item"><a href="#" onclick="switchTab('inspections')"><i class="fa-solid fa-clipboard-check"></i> Contrôle Technique</a></li>
+            <li class="nav-item"><a href="#" onclick="switchTab('incidents')"><i class="fa-solid fa-triangle-exclamation"></i> Sécurité & Incidents</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Application Area -->
+    <div class="main-wrapper">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left" style="display: flex; align-items: center; gap: 12px;">
+                <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                <h1 id="page-title">Tableau de Bord National</h1>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-toggle" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
+                <div class="user-profile" style="font-weight: 600; font-size: 14px;">
+                    <i class="fa-solid fa-circle-user" style="color: var(--secondary); margin-right: 6px;"></i> Opérateur National
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Hero Banner -->
+        <div class="hero-banner">
+            <div class="hero-content">
+                <h2>Système Centralisé Transports & Sécurité Routière</h2>
+                <p>Union des Comores – Gestion intégrée des titres de transport, permis et contrôles de sécurité.</p>
+            </div>
+        </div>
+
+        <!-- Main View Container -->
+        <main class="content-container" id="main-view">
+            <!-- Dynamic Content Injected via JS -->
+        </main>
+    </div>
+</div>
+
+<script>
+    // Initialize Supabase Client
+    // Replace SUPABASE_URL and SUPABASE_ANON_KEY with your project credentials
+    const SUPABASE_URL = "https://magynxmxsuzugihqgroi.supabase.co/rest/v1/";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hZ3lueG14c3V6dWdpaHFncm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzODU1OTIsImV4cCI6MjEwNjk2MTU5Mn0.r8uJ8zfVryvR7Gz3YRFz8wKIrD8r3kZdGJC-pHCmeOY";
+    const supabase = (SUPABASE_URL !== "YOUR_SUPABASE_URL_HERE") ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    // Theme Switcher Logic
+    function toggleTheme() {
+        const html = document.documentElement;
+        const themeBtn = document.querySelector('.theme-toggle i');
+        if (html.getAttribute('data-theme') === 'dark') {
+            html.setAttribute('data-theme', 'light');
+            themeBtn.className = 'fa-solid fa-moon';
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            themeBtn.className = 'fa-solid fa-sun';
+        }
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    // Mock Database State for Static/Github Pages Execution
+    const db = {
+        vehicles: [
+            { id: 1, plate: "KM-1029-A", owner: "Ali Mohamed", type: "Poids Lourds", status: "Conforme", date: "2026-02-14" },
+            { id: 2, plate: "KM-8842-B", owner: "Amina Said", type: "Voiture Particulière", status: "Expiré", date: "2025-11-20" },
+            { id: 3, plate: "KM-4411-C", owner: "Transport Express Comores", type: "Transport en Commun", status: "Conforme", date: "2026-03-01" }
+        ],
+        permits: [
+            { id: 1, name: "Kassim Ibrahim", number: "COM-99201", category: "B", status: "Valide" },
+            { id: 2, name: "Fatima Soilihi", number: "COM-33412", category: "C", status: "Suspendu" }
+        ]
+    };
+
+    // Render Views dynamically
+    function switchTab(view) {
+        const viewContainer = document.getElementById('main-view');
+        const title = document.getElementById('page-title');
+
+        // Update active class on nav links
+        document.querySelectorAll('.nav-item a').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        if (view === 'dashboard') {
+            title.innerText = "Tableau de Bord National";
+            viewContainer.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-car"></i></div>
+                        <div class="stat-info"><h4>Véhicules Immatriculés</h4><div class="value">${db.vehicles.length}</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-id-card"></i></div>
+                        <div class="stat-info"><h4>Permis Enregistrés</h4><div class="value">${db.permits.length}</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div class="stat-info"><h4>Taux de Conformité</h4><div class="value">87.4%</div></div>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <div class="card-header">
+                        <span class="card-title">Dernières Immatriculations</span>
+                        <button class="btn btn-accent" onclick="switchTab('vehicles')">Gérer Tout</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr><th>Plaque</th><th>Propriétaire</th><th>Catégorie</th><th>Statut</th></tr>
+                            </thead>
+                            <tbody>
+                                ${db.vehicles.map(v => `
+                                    <tr>
+                                        <td><b>${v.plate}</b></td>
+                                        <td>${v.owner}</td>
+                                        <td>${v.type}</td>
+                                        <td><span class="badge ${v.status === 'Conforme' ? 'badge-success' : 'badge-danger'}">${v.status}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+        } else if (view === 'vehicles') {
+            title.innerText = "Gestion des Véhicules";
+            viewContainer.innerHTML = `
+                <div class="data-card">
+                    <div class="card-header">
+                        <span class="card-title">Enregistrer un nouveau véhicule</span>
+                    </div>
+                    <form onsubmit="addVehicle(event)" class="form-grid">
+                        <div class="form-group"><label>Numéro d'Immatriculation</label><input type="text" id="v-plate" class="form-control" placeholder="ex: KM-5522-X" required></div>
+                        <div class="form-group"><label>Nom du Propriétaire</label><input type="text" id="v-owner" class="form-control" required></div>
+                        <div class="form-group"><label>Catégorie</label>
+                            <select id="v-type" class="form-control"><option>Voiture Particulière</option><option>Transport en Commun</option><option>Poids Lourds</option></select>
+                        </div>
+                        <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn"><i class="fa-solid fa-plus"></i> Ajouter Véhicule</button></div>
+                    </form>
+                </div>
+                <div class="data-card">
+                    <div class="card-header"><span class="card-title">Base Centrale des Véhicules</span></div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Plaque</th><th>Propriétaire</th><th>Type</th><th>Statut</th></tr></thead>
+                            <tbody id="vehicle-rows">
+                                ${db.vehicles.map(v => `
+                                    <tr>
+                                        <td><b>${v.plate}</b></td>
+                                        <td>${v.owner}</td>
+                                        <td>${v.type}</td>
+                                        <td><span class="badge badge-success">Conforme</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }
+    }
+
+    function addVehicle(e) {
+        e.preventDefault();
+        const plate = document.getElementById('v-plate').value;
+        const owner = document.getElementById('v-owner').value;
+        const type = document.getElementById('v-type').value;
+
+        db.vehicles.push({ id: Date.now(), plate, owner, type, status: "Conforme" });
+        alert("Véhicule enregistré avec succès !");
+        switchTab('vehicles');
+    }
+
+    // Initial View Mount
+    window.onload = () => switchTab('dashboard');
+</script>
+
+</body>
+</html>
